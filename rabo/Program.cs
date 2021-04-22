@@ -12,32 +12,43 @@ namespace rabo
             var customerTransactions = new List<Transaction>
             {
 
-                new Transaction // not over 50 so it doesn't count
+                new Transaction 
                 {
-                    Amount = 50, PurchaseDate = new DateTime(2020, 1, 1)
+                    Amount = 50.1, PurchaseDate = new DateTime(2020, 1, 1), CustomerId = 1
                 },
-                new Transaction // counts
+                new Transaction 
                 {
-                    Amount = 120, PurchaseDate = new DateTime(2020, 2, 1)
+                    Amount = 120, PurchaseDate = new DateTime(2020, 2, 1), CustomerId = 2
                 },
-                new Transaction // counts
+                new Transaction 
                 {
-                    Amount = 160, PurchaseDate = new DateTime(2020, 3, 1)
+                    Amount = 160, PurchaseDate = new DateTime(2020, 3, 1), CustomerId = 2
                 },
-                new Transaction // outside 3 month period
+                new Transaction
                 {
-                    Amount = 120, PurchaseDate = new DateTime(2020, 4, 1)
+                    Amount = 180, PurchaseDate = new DateTime(2020, 4, 1), CustomerId = 3
                 }
             };
 
             var period = new DateTime(2020, 1, 1);
-            IEnumerable<Transaction> transactions = 
+            IEnumerable<Transaction> threeMonthTransactions = 
                 customerTransactions.Where(x =>
                 x.PurchaseDate.Subtract(period).Days >= 0 && x.PurchaseDate.Subtract(period).Days <= 90).ToArray();
-            var reward = CalculateRewardPerCustomer(transactions);
-            Console.Out.WriteLine($"reward = {reward} for period {period}");
 
+            var groupByCustomerId = threeMonthTransactions.GroupBy(x => x.CustomerId);
+            foreach (IGrouping<int, Transaction> grouping in groupByCustomerId)
+            {
+                Console.Out.WriteLine($"Customer {grouping.Key}");
+                Transaction[] trans = grouping.ToArray();
+                foreach (var transactionsByMonth in trans.GroupBy(x => new { x.PurchaseDate.Month, x.PurchaseDate.Year }))
+                {
+                    int reward = CalculateRewardPerCustomer(transactionsByMonth.ToArray());
+                    Console.Out.WriteLine($"\t\t for month/year {transactionsByMonth.Key.Month}/{transactionsByMonth.Key.Year} = {reward}");
+                }
 
+                var totalReward = CalculateRewardPerCustomer(trans);
+                Console.Out.WriteLine($"\t\t\t total reward = {totalReward} ");
+            }
         }
 
         static int CalculateRewardPerCustomer(IEnumerable<Transaction> transactions)
@@ -73,6 +84,7 @@ namespace rabo
 
     class Transaction
     {
+        public int CustomerId { get; set; }
         public DateTime PurchaseDate { get; set; }
         public double Amount { get; set; }
 
